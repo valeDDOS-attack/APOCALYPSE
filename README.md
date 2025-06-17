@@ -45,7 +45,7 @@ BISOGNA PER FORZA INSTALLARE I PACCHETTI DETTI CON: pip, senno potrebbe comprome
 CI STANNO DUE GUI: 1) gui che assomiglia a loic 2) gui di apocalypse(sciegliete voi le funzioni sono uguali)
 
 git clone https://github.com/valerio213/APOCALYPSE.git
-cd apocalypse-ddos
+cd APOCALYPSE
 pip install aiohttp certifi dnspython numpy pillow requests cloudscraper PyRoxy yarl icmplib impacket psutil
 pip install -r requirements.txt
 pip install pillow requests
