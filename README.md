@@ -1,5 +1,4 @@
 # apocalypse
-ddos dos tool tools/ISTRUZIONI DEL TOOL LEGGI ATTENTAMENTE (OBBLIGATORIO): ISTRUZIONI DEL TOOL: fate il download di TUTTI I FILE metteteli in una cartella esempio nome cartella: APOCALYPSE, e aprite su linux/windows/mac il file gui_apocalypse.py e dopo avrete il programma apocalypse. nella CASELLA dove bisogna selezionare l'ip o l'url non usare IP, il TOOL funziona solo con URL. IMPOSTA IL PAYLOAD A 10KB altrimenti potrebbe compromettere il funzionamento. ApocalypseDOS è uno strumento DDoS (con GUI) scritto in Python, ATTENZIONE QUESTO TOOL PUO ESSRE CONSIDERATO ANCHE SUPERIORE A LOIC. E SOPRATUTO CON Solo scopi informativi.
 
 POTETE SCRIVERMI PER PROBLEMI O ERRORI
 
@@ -37,13 +36,6 @@ pip install pillow requests
 python3 gui_apocalypse.py
 ```
 
-**2. Installa Python 3.8+**
-
-Assicurati di avere Python 3.8 o superiore:
-```bash
-python3 --version
-```
-
 **3. Installa le dipendenze**
 ```bash
 pip install -r requirements.txt
@@ -52,16 +44,7 @@ Se ti serve la GUI:
 ```bash
 pip install pillow requests
 ```
-
-**4. (Opzionale) Scarica proxylist**
-- Puoi usare le proxylist già incluse o personalizzarne una in `files/proxies/`.
-
 ---
-
-**Avvia GUI (se vuoi la grafica):**
-```bash
-python3 gui_apocalypse.py
-```
 
 ---
 
@@ -78,12 +61,6 @@ python3 gui_apocalypse.py
 - (Opzionale) [bombardier](https://github.com/codesenberg/bombardier) se vuoi usare il metodo BOMB.
 
 ---
-
-## 🧑‍💻 Come contribuire?
-
-- Fai una fork, crea una branch, proponi una pull-request!
-- Metti una ⭐️ se il progetto ti piace!
-- Scrivi issue per bug, suggerimenti o nuove feature!
 
 ---
 
