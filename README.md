@@ -41,7 +41,9 @@ mettere 10kb a richiesta NON ALTRI NUMERI, metodo potete sciegliere voi, pacchet
 COSI SARA CONFIGURATO IL VOSTRO ATTACCO DDOS/DOS
 ```bash
 ^^^PRIMA DELL'INSTALLAZIONE VEDERE LE ISTRUZIONI QUA SOPRA^^^
-CI STANNO DUE GUI: 1) gui che assomiglia a loic 2) gui di apocalypse
+
+CI STANNO DUE GUI: 1) gui che assomiglia a loic 2) gui di apocalypse(sciegliete voi le funzioni sono uguali)
+
 git clone https://github.com/valerio213/apocalypse-ddos.git
 cd apocalypse-ddos
 pip install aiohttp certifi dnspython numpy pillow requests cloudscraper PyRoxy yarl icmplib impacket psutil
