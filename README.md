@@ -14,7 +14,7 @@ POTETE SCRIVERMI PER PROBLEMI O ERRORI
 QUESTO é IL TOOL ESEGUITO CON LA GUI:
 ![Logo](apocalypse.png)
 
-**APOCALYPSE-DDOS** è il tool definitivo per test di stress e simulazione DDoS, con oltre 30+ metodi Layer 4/7: potente, veloce e facile da usare.  
+**APOCALYPSE-DDOS** è il tool definitivo per test di stress DDoS, con oltre 30+ metodi Layer 4/7: potente, veloce e facile da usare.  
 > ⚡️ **Usalo solo per scopi educativi e test autorizzati!** ⚡️
 
 ---
