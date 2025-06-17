@@ -1,6 +1,7 @@
 # apocalypse
 ddos dos tool tools/ISTRUZIONI DEL TOOL LEGGI ATTENTAMENTE (OBBLIGATORIO): ISTRUZIONI DEL TOOL: fate il download di TUTTI I FILE metteteli in una cartella esempio nome cartella: APOCALYPSE, e aprite su linux/windows/mac il file gui_apocalypse.py e dopo avrete il programma apocalypse. nella CASELLA dove bisogna selezionare l'ip o l'url non usare IP, il TOOL funziona solo con URL. IMPOSTA IL PAYLOAD A 10KB altrimenti potrebbe compromettere il funzionamento. ApocalypseDOS è uno strumento DDoS (con GUI) scritto in Python, ATTENZIONE QUESTO TOOL PUO ESSRE CONSIDERATO ANCHE SUPERIORE A LOIC. E SOPRATUTO CON Solo scopi informativi.
 
+POTETE SCRIVERMI PER PROBLEMI O ERRORI
 
 # APOCALYPSE-DDOS 🔥
 
@@ -29,6 +30,10 @@ ddos dos tool tools/ISTRUZIONI DEL TOOL LEGGI ATTENTAMENTE (OBBLIGATORIO): ISTRU
 ```bash
 git clone https://github.com/valerio213/apocalypse-ddos.git
 cd apocalypse-ddos
+pip install -r requirements.txt
+pip install pillow requests
+python3 gui_apocalypse.py
+(potrebbe richiedere altre installazioni per dos.py)
 ```
 
 **2. Installa Python 3.8+**
@@ -51,21 +56,6 @@ pip install pillow requests
 - Puoi usare le proxylist già incluse o personalizzarne una in `files/proxies/`.
 
 ---
-
-## 🛠️ Esecuzione di dos.py
-
-```bash
-python3 dos.py <metodo> <target/url/ip:port> <socks_type> <threads> <proxylist> <rpc> <durata>
-```
-**Esempi:**
-- Layer7:  
-  `python3 dos.py GET http://example.com 1 2000 http.txt 64 60`
-- Layer4:  
-  `python3 dos.py TCP 1.2.3.4:80 1000 60`
-- Amplification:  
-  `python3 dos.py NTP 1.2.3.4:80 1000 60 ntp_reflectors.txt`
-- Tools:  
-  `python3 dos.py TOOLS`
 
 **Avvia GUI (se vuoi la grafica):**
 ```bash
@@ -110,10 +100,5 @@ Più siamo, più funzionalità aggiungeremo!
 
 ---
 
-### Seguici & Community
 
-- Telegram: [Gruppo ufficiale](https://t.me/tuo-gruppo)
-- Youtube: [Demo video](https://www.youtube.com/results?search_query=apocalypse+ddos)
-- Issues & Pull Request sempre benvenute!
 
----
