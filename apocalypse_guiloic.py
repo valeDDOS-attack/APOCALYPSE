@@ -168,7 +168,7 @@ left_frame.pack(side="left", fill="y")
 left_frame.pack_propagate(0)
 tk.Label(left_frame, text="APOCALYPSE\nRED", font=("OCR A Extended",24,"bold"), fg=FG_TITLE, bg=BG_MAIN, justify="center").pack(pady=(18,10))
 try:
-    img = Image.open("skull.jpg").resize((170, 120))
+    img = Image.open(""iStock-1251385553-1.webp"").resize((170, 120))
     photo = ImageTk.PhotoImage(img)
     tk.Label(left_frame, image=photo, bg=BG_MAIN).pack(pady=(8,8))
 except Exception:
@@ -269,3 +269,4 @@ btn_start.grid(row=2, column=0, columnspan=8, pady=10)
 
 update_status_bars()
 root.mainloop()
+
