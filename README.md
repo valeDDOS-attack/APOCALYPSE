@@ -36,7 +36,7 @@ QUESTO é IL TOOL ESEGUITO CON LA GUI:
 **1. Clona il repository**
 
 BISOGNA PER FORZA INSTALLARE I PACCHETTI DETTI CON: pip, senno potrebbe compromettere la funzione del tool
-COME SI USA?=:mettere il sito  NON L'IP, poi mettere la concorrenza da 1000 a 2000 senno compromette la funzione del tool, 
+ISTRUZIONI FONDAMENTALI:mettere il sito  NON L'IP, poi mettere la concorrenza da 1000 a 2000 senno compromette la funzione del tool, 
 mettere 10kb a richiesta NON ALTRI NUMERI, metodo potete sciegliere voi, pacchetti potete sciegliere voi, 64 per request per connessione. 
 COSI SARA CONFIGURATO IL VOSTRO ATTACCO DDOS/DOS
 ```bash
@@ -44,7 +44,7 @@ COSI SARA CONFIGURATO IL VOSTRO ATTACCO DDOS/DOS
 
 CI STANNO DUE GUI: 1) gui che assomiglia a loic 2) gui di apocalypse(sciegliete voi le funzioni sono uguali)
 
-git clone https://github.com/valerio213/apocalypse-ddos.git
+git clone https://github.com/valerio213/APOCALYPSE.git
 cd apocalypse-ddos
 pip install aiohttp certifi dnspython numpy pillow requests cloudscraper PyRoxy yarl icmplib impacket psutil
 pip install -r requirements.txt
