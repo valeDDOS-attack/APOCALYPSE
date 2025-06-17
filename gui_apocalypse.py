@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 processes = []
 fake_threads = []
 attack_active = False
-attack_lock = threading.Lock()  # <--- Nuovo lock
+attack_lock = threading.Lock()
 
 def is_valid_url(url):
     try:
@@ -98,7 +98,6 @@ def start_test():
             attack_active = False
         return
 
-    # Comandi e box di output dedicati
     cmds_labels_boxes = []
 
     if use_dos:
@@ -171,7 +170,6 @@ def start_test():
     t2.start()
     fake_threads.append(t2)
 
-    # ---- AUTOSTOP dopo la durata (opzionale)
     def auto_stop():
         try:
             d = int(entry_duration.get().strip())
@@ -203,85 +201,88 @@ def stop_test():
     output_box_fake3.insert(tk.END, "Attacco terminato\n")
     output_box_fake3.see(tk.END)
 
-# --- GUI setup identico al tuo, non modificato ---
+# --- GUI setup compatta ---
 
 root = tk.Tk()
 root.title("APOCALYPSE RED")
-root.geometry("950x1050")
-root.configure(bg="#0d0d0d")
+root.geometry("520x390")  # <<<< PIU' PICCOLA!
+root.configure(bg="#181818")
 
-font_label = ("OCR A Extended", 11, "bold")
-font_input = ("Consolas", 11)
-font_title = ("OCR A Extended", 25, "bold")
+font_label = ("Consolas", 8, "bold")
+font_input = ("Consolas", 8)
+font_title = ("Consolas", 15, "bold")
 
-tk.Label(root, text="A P O C A L Y P S E", font=font_title, fg="red", bg="#0d0d0d").pack(pady=10)
+tk.Label(root, text="A P O C A L Y P S E", font=font_title, fg="red", bg="#181818").pack(pady=2)
 
-img = Image.open("skull.jpg").resize((300, 150))
-photo = ImageTk.PhotoImage(img)
-tk.Label(root, image=photo, bg="#0d0d0d").pack(pady=10)
+try:
+    img = Image.open("skull.jpg").resize((110, 55))
+    photo = ImageTk.PhotoImage(img)
+    tk.Label(root, image=photo, bg="#181818").pack(pady=2)
+except Exception:
+    pass
 
-frame_options = tk.Frame(root, bg="#0d0d0d", highlightbackground="red", highlightthickness=2, padx=10, pady=10)
-frame_options.pack(pady=10, fill="x", padx=20)
+frame_options = tk.Frame(root, bg="#181818", highlightbackground="red", highlightthickness=1, padx=2, pady=2)
+frame_options.pack(pady=2, fill="x", padx=5)
 
-def add_entry(label_text, default="", width=50):
-    tk.Label(frame_options, text=label_text, font=font_label, fg="white", bg="#0d0d0d").pack(anchor="w")
+def add_entry(label_text, default="", width=16):
+    tk.Label(frame_options, text=label_text, font=font_label, fg="white", bg="#181818").pack(anchor="w")
     e = tk.Entry(frame_options, font=font_input, fg="red", bg="black", insertbackground="red", width=width)
     if default:
         e.insert(0, default)
-    e.pack(pady=2)
+    e.pack(pady=1)
     return e
 
-entry_target = add_entry("Target URL o IP (es: http://example.com):")
-entry_duration = add_entry("Durata (s):", "60")
-entry_concurrency = add_entry("Concorrenza:", "2000")
-entry_payload = add_entry("Payload Size (es: 10KB o 10MB):", "10MB")
+entry_target = add_entry("Target URL o IP:", "", 24)
+entry_duration = add_entry("Durata (s):", "30", 8)
+entry_concurrency = add_entry("Concorrenza:", "1000", 8)
+entry_payload = add_entry("Payload Size:", "10MB", 8)
 
-tk.Label(frame_options, text="--- OPZIONI dos.py (solo se selezionato sotto) ---", font=font_label, fg="#ff8800", bg="#0d0d0d").pack(anchor="w", pady=(8,0))
-entry_dos_method = add_entry("Metodo (es: GET, POST, OVH, STRESS...):", "GET", 20)
-entry_socks_type = add_entry("SOCKS Type [0=ALL,1=HTTP,4=SOCKS4,5=SOCKS5,6=RANDOM]:", "1", 8)
-entry_proxylist = add_entry("File Proxylist (es: http.txt):", "http.txt", 20)
-entry_rpc = add_entry("RPC (request per connessione):", "64", 8)
+tk.Label(frame_options, text="--- dos.py ---", font=font_label, fg="#ff8800", bg="#181818").pack(anchor="w", pady=(3,0))
+entry_dos_method = add_entry("Metodo:", "GET", 8)
+entry_socks_type = add_entry("SOCKS Type:", "1", 5)
+entry_proxylist = add_entry("Proxylist:", "http.txt", 12)
+entry_rpc = add_entry("RPC:", "64", 5)
 
-tk.Label(frame_options, text="Opzioni aggiuntive CLI (facoltative):", font=font_label, fg="#999999", bg="#0d0d0d").pack(anchor="w")
-entry_custom_args = tk.Entry(frame_options, font=font_input, fg="red", bg="black", insertbackground="red", width=80)
-entry_custom_args.pack(pady=2)
+tk.Label(frame_options, text="Argomenti CLI:", font=font_label, fg="#999999", bg="#181818").pack(anchor="w")
+entry_custom_args = tk.Entry(frame_options, font=font_input, fg="red", bg="black", insertbackground="red", width=28)
+entry_custom_args.pack(pady=1)
 
-frame_script = tk.Frame(frame_options, bg="#0d0d0d")
-frame_script.pack(pady=(8,0), anchor="w")
+frame_script = tk.Frame(frame_options, bg="#181818")
+frame_script.pack(pady=(2,0), anchor="w")
 use_stress_var = tk.BooleanVar(value=True)
 use_dos_var = tk.BooleanVar(value=True)
-cb_stress = tk.Checkbutton(frame_script, text="Usa stress_core.py (Console #3)", variable=use_stress_var, font=font_label, fg="white", bg="#0d0d0d", selectcolor="#cc0000")
-cb_stress.pack(side=tk.LEFT, padx=(0,20))
-cb_dos = tk.Checkbutton(frame_script, text="Usa dos.py (Console #1)", variable=use_dos_var, font=font_label, fg="white", bg="#0d0d0d", selectcolor="#cc0000")
+cb_stress = tk.Checkbutton(frame_script, text="stress_core.py", variable=use_stress_var, font=font_label, fg="white", bg="#181818", selectcolor="#cc0000")
+cb_stress.pack(side=tk.LEFT, padx=(0,5))
+cb_dos = tk.Checkbutton(frame_script, text="dos.py", variable=use_dos_var, font=font_label, fg="white", bg="#181818", selectcolor="#cc0000")
 cb_dos.pack(side=tk.LEFT)
 
-frame_dos = tk.Frame(root, bg="#0d0d0d")
-frame_dos.pack(pady=10)
+frame_dos = tk.Frame(root, bg="#181818")
+frame_dos.pack(pady=2)
 
 def create_fake_dos(title):
-    box = scrolledtext.ScrolledText(frame_dos, height=10, width=40, bg="black", fg="green", font=("Consolas", 9),
+    box = scrolledtext.ScrolledText(frame_dos, height=4, width=22, bg="black", fg="green", font=("Consolas", 7),
                                     insertbackground="green", highlightbackground="red", highlightthickness=1)
-    box.insert(tk.END, f"{title}\nIn attesa di avvio...\n")
-    box.pack(side=tk.LEFT, padx=10)
+    box.insert(tk.END, f"{title}\nIn attesa...\n")
+    box.pack(side=tk.LEFT, padx=3)
     return box
 
-output_box_main = create_fake_dos("DOS Console #1")
-output_box_fake2 = create_fake_dos("DOS Console #2")
-output_box_fake3 = create_fake_dos("DOS Console #3")
+output_box_main = create_fake_dos("DOS #1")
+output_box_fake2 = create_fake_dos("DOS #2")
+output_box_fake3 = create_fake_dos("DOS #3")
 
-button_frame = tk.Frame(root, bg="#0d0d0d")
-button_frame.pack(pady=20)
+button_frame = tk.Frame(root, bg="#181818")
+button_frame.pack(pady=3)
 
 def hover(e, color): e.widget.config(bg=color)
 
 btn_start = tk.Button(button_frame, text="START", command=start_test, font=font_label,
-                      fg="white", bg="red", width=20, height=2)
-btn_start.pack(side=tk.LEFT, padx=20)
+                      fg="white", bg="red", width=12, height=1)
+btn_start.pack(side=tk.LEFT, padx=4)
 btn_start.bind("<Enter>", lambda e: hover(e, "#cc0000"))
 btn_start.bind("<Leave>", lambda e: hover(e, "red"))
 
 btn_stop = tk.Button(button_frame, text="STOP", command=stop_test, font=font_label,
-                     fg="white", bg="grey", width=20, height=2)
-btn_stop.pack(side=tk.LEFT, padx=20)
+                     fg="white", bg="grey", width=12, height=1)
+btn_stop.pack(side=tk.LEFT, padx=4)
 
 root.mainloop()
