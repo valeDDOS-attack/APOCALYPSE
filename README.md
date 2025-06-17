@@ -27,13 +27,14 @@ POTETE SCRIVERMI PER PROBLEMI O ERRORI
 ## 🚀 Installazione
 
 **1. Clona il repository**
+BISOGNA PER FORZA INSTALLARE I PACCHETTI DETTI CON: pip, senno potrebbe compromettere la funzione del tool
 ```bash
 git clone https://github.com/valerio213/apocalypse-ddos.git
 cd apocalypse-ddos
+pip install aiohttp certifi dnspython numpy pillow requests cloudscraper PyRoxy yarl icmplib impacket psutil
 pip install -r requirements.txt
 pip install pillow requests
 python3 gui_apocalypse.py
-(potrebbe richiedere altre installazioni per dos.py)
 ```
 
 **2. Installa Python 3.8+**
