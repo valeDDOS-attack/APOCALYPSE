@@ -1,5 +1,13 @@
 # apocalypse
 
+**Strumento per test di stress/DoS/DDoS con tre console:** due con stresscore, una con dos.py.  
+Usa metodi moderni di attacco e gestione proxy.  
+
+ddos-attack-tool
+ddos-attack-tools
+ddos
+dos DDOS DOS
+
 POTETE SCRIVERMI PER PROBLEMI O ERRORI
 
 # APOCALYPSE-DDOS 🔥
